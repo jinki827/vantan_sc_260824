@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>放課後予定共有アプリ</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        "Hiragino Kaku Gothic ProN",
+        "Yu Gothic",
+        sans-serif;
+
+      background: #f5f7fb;
+      color: #333;
+    }
+
+    /* ヘッダー */
+    header {
+      background: white;
+      border-bottom: 1px solid #e5e7eb;
+      padding: 16px 24px;
+
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      font-size: 22px;
+      font-weight: bold;
+      color: #4f6bed;
+    }
+
+    .header-right {
+      display: flex;
+      gap: 10px;
+    }
+
+    button {
+      border: none;
+      cursor: pointer;
+      border-radius: 8px;
+      padding: 9px 14px;
+      font-size: 14px;
+    }
+
+    .today-btn {
+      background: #eef2ff;
+      color: #4f6bed;
+    }
+
+    .add-btn {
+      background: #4f6bed;
+      color: white;
+    }
+
+    /* メイン */
+    .container {
+      max-width: 1100px;
+      margin: 30px auto;
+      padding: 0 20px;
+    }
+
+    /* カレンダーヘッダー */
+    .calendar-header {
+      background: white;
+      padding: 20px;
+
+      border-radius: 14px 14px 0 0;
+
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .month-title {
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    .month-buttons {
+      display: flex;
+      gap: 8px;
+    }
+
+    .month-buttons button {
+      background: #f1f3f7;
+    }
+
+    /* 曜日 */
+    .weekdays {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      background: #fafafa;
+      border-left: 1px solid #e5e7eb;
+    }
+
+    .weekday {
+      text-align: center;
+      padding: 12px 5px;
+      font-weight: bold;
+      color: #777;
+      border-right: 1px solid #e5e7eb;
+    }
+
+    /* カレンダー */
+    .calendar {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      background: white;
+
+      border-left: 1px solid #e5e7eb;
+      border-top: 1px solid #e5e7eb;
+
+      border-radius: 0 0 14px 14px;
+      overflow: hidden;
+    }
+
+    .day {
+      min-height: 120px;
+      padding: 10px;
+
+      border-right: 1px solid #e5e7eb;
+      border-bottom: 1px solid #e5e7eb;
+
+      cursor: pointer;
+
+      transition: 0.2s;
+    }
+
+    .day:hover {
+      background: #f7f8ff;
+    }
+
+    .day.empty {
+      background: #fafafa;
+      cursor: default;
+    }
+
+    .day-number {
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .today {
+      background: #f0f4ff;
+    }
+
+    .today .day-number {
+      color: #4f6bed;
+    }
+
+    /* ○ / ❌ */
+    .status {
+      margin-top: 15px;
+
+      display: flex;
+      justify-content: center;
+      align-items: center;
+
+      font-size: 28px;
+      font-weight: bold;
+    }
+
+    .has-event {
+      color: #4f6bed;
+    }
+
+    .no-event {
+      color: #d1d5db;
+    }
+
+    /* 予定概要 */
+    .event-title {
+      margin-top: 7px;
+      text-align: center;
+
+      font-size: 12px;
+      font-weight: bold;
+
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* モーダル */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+
+      background: rgba(0, 0, 0, 0.4);
+
+      display: none;
+
+      justify-content: center;
+      align-items: center;
+
+      padding: 20px;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal {
+      background: white;
+      width: 100%;
+      max-width: 450px;
+
+      border-radius: 16px;
+      padding: 25px;
+
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+    }
+
+    .modal h2 {
+      margin-top: 0;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+
+    .form-group input,
+    .form-group textarea {
+      width: 100%;
+
+      padding: 10px;
+
+      border: 1px solid #ddd;
+      border-radius: 8px;
+
+      font-size: 14px;
+    }
+
+    .form-group textarea {
+      height: 80px;
+      resize: vertical;
+    }
+
+    .modal-buttons {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    .cancel-btn {
+      background: #eee;
+    }
+
+    .save-btn {
+      background: #4f6bed;
+      color: white;
+    }
+
+    .delete-btn {
+      margin-right: auto;
+      background: #fee2e2;
+      color: #dc2626;
+    }
+
+    /* 説明 */
+    .legend {
+      background: white;
+
+      margin-top: 15px;
+      padding: 15px 20px;
+
+      border-radius: 12px;
+
+      display: flex;
+      gap: 25px;
+
+      font-size: 14px;
+    }
+
+    .legend span {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    /* スマホ */
+    @media (max-width: 600px) {
+
+      header {
+        padding: 12px 15px;
+      }
+
+      .logo {
+        font-size: 18px;
+      }
+
+      .container {
+        margin: 15px auto;
+        padding: 0 8px;
+      }
+
+      .calendar-header {
+        padding: 15px;
+      }
+
+      .month-title {
+        font-size: 18px;
+      }
+
+      .day {
+        min-height: 75px;
+        padding: 6px;
+      }
+
+      .status {
+        margin-top: 8px;
+        font-size: 20px;
+      }
+
+      .event-title {
+        display: none;
+      }
+
+      .weekday {
+        font-size: 11px;
+        padding: 8px 2px;
+      }
+
+      .legend {
+        font-size: 12px;
+        gap: 15px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+
+    <div class="logo">
+      📚 放課後予定共有
+    </div>
+
+    <div class="header-right">
+      <button class="today-btn" onclick="goToday()">
+        今日
+      </button>
+
+      <button class="add-btn" onclick="openAddModal()">
+        ＋予定を追加
+      </button>
+    </div>
+
+  </header>
+
+
+  <main class="container">
+
+    <div class="calendar-header">
+
+      <div class="month-title" id="monthTitle"></div>
+
+      <div class="month-buttons">
+        <button onclick="previousMonth()">‹</button>
+        <button onclick="nextMonth()">›</button>
+      </div>
+
+    </div>
+
+
+    <div class="weekdays">
+
+      <div class="weekday">日</div>
+      <div class="weekday">月</div>
+      <div class="weekday">火</div>
+      <div class="weekday">水</div>
+      <div class="weekday">木</div>
+      <div class="weekday">金</div>
+      <div class="weekday">土</div>
+
+    </div>
+
+
+    <div class="calendar" id="calendar"></div>
+
+
+    <div class="legend">
+
+      <span>
+        <strong class="has-event">○</strong>
+        予定あり
+      </span>
+
+      <span>
+        <strong class="no-event">❌</strong>
+        予定なし
+      </span>
+
+    </div>
+
+  </main>
+
+
+  <!-- モーダル -->
+
+  <div class="modal-overlay" id="modal">
+
+    <div class="modal">
+
+      <h2 id="modalTitle">
+        放課後の予定
+      </h2>
+
+      <div class="form-group">
+
+        <label>
+          日付
+        </label>
+
+        <input type="text" id="dateInput" readonly>
+
+      </div>
+
+
+      <div class="form-group">
+
+        <label>
+          予定
+        </label>
+
+        <input type="text" id="eventInput" placeholder="例：部活、友達と遊ぶ">
+
+      </div>
+
+
+      <div class="form-group">
+
+        <label>
+          場所
+        </label>
+
+        <input type="text" id="placeInput" placeholder="例：学校、渋谷駅">
+
+      </div>
+
+
+      <div class="form-group">
+
+        <label>
+          メモ
+        </label>
+
+        <textarea id="memoInput" placeholder="自由にメモできます"></textarea>
+
+      </div>
+
+
+      <div class="modal-buttons">
+
+        <button class="delete-btn" id="deleteBtn" onclick="deleteEvent()">
+          削除
+        </button>
+
+        <button class="cancel-btn" onclick="closeModal()">
+          キャンセル
+        </button>
+
+        <button class="save-btn" onclick="saveEvent()">
+          保存
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <script>
+
+    /* =========================
+       データ
+    ========================= */
+
+    let currentDate = new Date();
+
+    let selectedDate = null;
+
+    let events =
+      JSON.parse(
+        localStorage.getItem("afterSchoolEvents")
+      ) || {};
+
+
+    /* =========================
+       カレンダー表示
+    ========================= */
+
+    function renderCalendar() {
+
+      const calendar =
+        document.getElementById("calendar");
+
+      calendar.innerHTML = "";
+
+      const year =
+        currentDate.getFullYear();
+
+      const month =
+        currentDate.getMonth();
+
+      const monthTitle =
+        document.getElementById("monthTitle");
+
+      monthTitle.textContent =
+        `${year}年${month + 1}月`;
+
+
+      // 月初の曜日
+      const firstDay =
+        new Date(year, month, 1).getDay();
+
+
+      // 月の日数
+      const lastDate =
+        new Date(year, month + 1, 0).getDate();
+
+
+      // 前月の空白
+      for (
+        let i = 0;
+        i < firstDay;
+        i++
+      ) {
+
+        const empty =
+          document.createElement("div");
+
+        empty.className = "day empty";
+
+        calendar.appendChild(empty);
+
+      }
+
+
+      // 日付
+      for (
+        let date = 1;
+        date <= lastDate;
+        date++
+      ) {
+
+        const day =
+          document.createElement("div");
+
+        day.className = "day";
+
+
+        const dateKey =
+          formatDate(
+            new Date(year, month, date)
+          );
+
+
+        const isToday =
+          dateKey === formatDate(new Date());
+
+
+        if (isToday) {
+          day.classList.add("today");
+        }
+
+
+        const dayNumber =
+          document.createElement("div");
+
+        dayNumber.className =
+          "day-number";
+
+        dayNumber.textContent =
+          date;
+
+
+        day.appendChild(dayNumber);
+
+
+        const status =
+          document.createElement("div");
+
+        status.className = "status";
+
+
+        if (events[dateKey]) {
+
+          status.textContent = "○";
+
+          status.classList.add(
+            "has-event"
+          );
+
+        } else {
+
+          status.textContent = "❌";
+
+          status.classList.add(
+            "no-event"
+          );
+
+        }
+
+
+        day.appendChild(status);
+
+
+        // 予定タイトル
+        if (events[dateKey]) {
+
+          const title =
+            document.createElement("div");
+
+          title.className =
+            "event-title";
+
+          title.textContent =
+            events[dateKey].event;
+
+          day.appendChild(title);
+
+        }
+
+
+        day.onclick = function () {
+
+          openModal(dateKey);
+
+        };
+
+
+        calendar.appendChild(day);
+
+      }
+
+    }
+
+
+    /* =========================
+       日付
+    ========================= */
+
+    function formatDate(date) {
+
+      const year =
+        date.getFullYear();
+
+      const month =
+        String(date.getMonth() + 1)
+          .padStart(2, "0");
+
+      const day =
+        String(date.getDate())
+          .padStart(2, "0");
+
+      return `${year}-${month}-${day}`;
+
+    }
+
+
+    /* =========================
+       前月
+    ========================= */
+
+    function previousMonth() {
+
+      currentDate.setMonth(
+        currentDate.getMonth() - 1
+      );
+
+      renderCalendar();
+
+    }
+
+
+    /* =========================
+       次月
+    ========================= */
+
+    function nextMonth() {
+
+      currentDate.setMonth(
+        currentDate.getMonth() + 1
+      );
+
+      renderCalendar();
+
+    }
+
+
+    /* =========================
+       今日
+    ========================= */
+
+    function goToday() {
+
+      currentDate = new Date();
+
+      renderCalendar();
+
+    }
+
+
+    /* =========================
+       モーダル
+    ========================= */
+
+    function openModal(dateKey) {
+
+      selectedDate = dateKey;
+
+      document.getElementById(
+        "dateInput"
+      ).value = dateKey;
+
+
+      const event =
+        events[dateKey];
+
+
+      if (event) {
+
+        document.getElementById(
+          "eventInput"
+        ).value = event.event || "";
+
+        document.getElementById(
+          "placeInput"
+        ).value = event.place || "";
+
+        document.getElementById(
+          "memoInput"
+        ).value = event.memo || "";
+
+        document.getElementById(
+          "deleteBtn"
+        ).style.display = "block";
+
+      } else {
+
+        document.getElementById(
+          "eventInput"
+        ).value = "";
+
+        document.getElementById(
+          "placeInput"
+        ).value = "";
+
+        document.getElementById(
+          "memoInput"
+        ).value = "";
+
+        document.getElementById(
+          "deleteBtn"
+        ).style.display = "none";
+
+      }
+
+
+      document.getElementById(
+        "modal"
+      ).classList.add("active");
+
+    }
+
+
+    /* =========================
+       新規追加
+    ========================= */
+
+    function openAddModal() {
+
+      const today =
+        formatDate(new Date());
+
+      openModal(today);
+
+    }
+
+
+    /* =========================
+       閉じる
+    ========================= */
+
+    function closeModal() {
+
+      document.getElementById(
+        "modal"
+      ).classList.remove("active");
+
+    }
+
+
+    /* =========================
+       保存
+    ========================= */
+
+    function saveEvent() {
+
+      const event =
+        document.getElementById(
+          "eventInput"
+        ).value.trim();
+
+
+      const place =
+        document.getElementById(
+          "placeInput"
+        ).value.trim();
+
+
+      const memo =
+        document.getElementById(
+          "memoInput"
+        ).value.trim();
+
+
+      if (!event) {
+
+        alert(
+          "予定を入力してください。"
+        );
+
+        return;
+
+      }
+
+
+      events[selectedDate] = {
+
+        event: event,
+
+        place: place,
+
+        memo: memo
+
+      };
+
+
+      localStorage.setItem(
+        "afterSchoolEvents",
+        JSON.stringify(events)
+      );
+
+
+      closeModal();
+
+      renderCalendar();
+
+    }
+
+
+    /* =========================
+       削除
+    ========================= */
+
+    function deleteEvent() {
+
+      if (!selectedDate) {
+        return;
+      }
+
+
+      if (
+        confirm(
+          "この予定を削除しますか？"
+        )
+      ) {
+
+        delete events[selectedDate];
+
+
+        localStorage.setItem(
+          "afterSchoolEvents",
+          JSON.stringify(events)
+        );
+
+
+        closeModal();
+
+        renderCalendar();
+
+      }
+
+    }
+
+
+    /* =========================
+       初期表示
+    ========================= */
+
+    renderCalendar();
+
+  </script>
+
+</body>
+
+</html>
