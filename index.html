@@ -261,10 +261,58 @@
       resize: vertical;
     }
 
+    /* トグルスイッチのスタイル */
+    .toggle-switch {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      margin-bottom: 5px;
+    }
+
+    .toggle-switch input[type="checkbox"] {
+      display: none;
+    }
+
+    .toggle-slider {
+      width: 44px;
+      height: 24px;
+      background-color: #ccc;
+      border-radius: 24px;
+      position: relative;
+      transition: 0.3s;
+    }
+
+    .toggle-slider::before {
+      content: "";
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background-color: white;
+      border-radius: 50%;
+      top: 2px;
+      left: 2px;
+      transition: 0.3s;
+    }
+
+    .toggle-switch input[type="checkbox"]:checked + .toggle-slider {
+      background-color: #16a34a; /* 募集中の色 */
+    }
+
+    .toggle-switch input[type="checkbox"]:checked + .toggle-slider::before {
+      transform: translateX(20px);
+    }
+
+    .toggle-label {
+      font-size: 14px;
+      font-weight: normal;
+    }
+
     .modal-buttons {
       display: flex;
       justify-content: flex-end;
       gap: 10px;
+      margin-top: 20px;
     }
 
     .cancel-btn {
@@ -280,39 +328,6 @@
       margin-right: auto;
       background: #fee2e2;
       color: #dc2626;
-    }
-
-    .status-btn-group {
-      display: flex;
-      gap: 10px;
-    }
-
-    .status-btn {
-      flex: 1;
-      padding: 10px;
-      font-size: 14px;
-      font-weight: bold;
-      border: 2px solid #e5e7eb;
-      background: #f9fafb;
-      color: #6b7280;
-      border-radius: 8px;
-      transition: all 0.2s;
-    }
-
-    .status-btn:hover {
-      background: #f3f4f6;
-    }
-
-    .status-btn.active.recruiting-btn {
-      border-color: #16a34a;
-      background: #dcfce7;
-      color: #15803d;
-    }
-
-    .status-btn.active.unavailable-btn {
-      border-color: #dc2626;
-      background: #fee2e2;
-      color: #b91c1c;
     }
 
     /* 説明 */
@@ -471,66 +486,44 @@
       </h2>
 
       <div class="form-group">
-
         <label>
           日付
         </label>
-
         <input type="text" id="dateInput" readonly>
-
       </div>
 
-
-      <div class="form-group">
-
+      <!-- 募集中のトグルスイッチを追加 -->
+      <div class="form-group" style="margin-bottom: 20px;">
         <label>
-          募集状況
+          募集をかける
         </label>
-
-        <div class="status-btn-group">
-          <button type="button" class="status-btn recruiting-btn active" id="recruitingBtn" onclick="setStatus('recruiting')">
-            ◎ 募集中
-          </button>
-          <button type="button" class="status-btn unavailable-btn" id="unavailableBtn" onclick="setStatus('unavailable')">
-            × 空いていない
-          </button>
-        </div>
-
+        <label class="toggle-switch">
+          <input type="checkbox" id="recruitingInput" checked>
+          <div class="toggle-slider"></div>
+          <span class="toggle-label" id="recruitingLabel">募集中 (◎)</span>
+        </label>
       </div>
 
-
       <div class="form-group">
-
         <label>
           予定
         </label>
-
         <input type="text" id="eventInput" placeholder="例：部活、友達と遊ぶ">
-
       </div>
 
-
       <div class="form-group">
-
         <label>
           場所
         </label>
-
         <input type="text" id="placeInput" placeholder="例：学校、渋谷駅">
-
       </div>
 
-
       <div class="form-group">
-
         <label>
           メモ
         </label>
-
         <textarea id="memoInput" placeholder="自由にメモできます"></textarea>
-
       </div>
-
 
       <div class="modal-buttons">
 
@@ -560,14 +553,8 @@
     ========================= */
 
     let currentDate = new Date();
-
     let selectedDate = null;
-
-    let events =
-      JSON.parse(
-        localStorage.getItem("afterSchoolEvents")
-      ) || {};
-
+    let events = JSON.parse(localStorage.getItem("afterSchoolEvents")) || {};
 
     /* =========================
        カレンダー表示
@@ -575,148 +562,82 @@
 
     function renderCalendar() {
 
-      const calendar =
-        document.getElementById("calendar");
-
+      const calendar = document.getElementById("calendar");
       calendar.innerHTML = "";
 
-      const year =
-        currentDate.getFullYear();
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+      const monthTitle = document.getElementById("monthTitle");
 
-      const month =
-        currentDate.getMonth();
-
-      const monthTitle =
-        document.getElementById("monthTitle");
-
-      monthTitle.textContent =
-        `${year}年${month + 1}月`;
-
+      monthTitle.textContent = `${year}年${month + 1}月`;
 
       // 月初の曜日
-      const firstDay =
-        new Date(year, month, 1).getDay();
-
+      const firstDay = new Date(year, month, 1).getDay();
 
       // 月の日数
-      const lastDate =
-        new Date(year, month + 1, 0).getDate();
-
+      const lastDate = new Date(year, month + 1, 0).getDate();
 
       // 前月の空白
-      for (
-        let i = 0;
-        i < firstDay;
-        i++
-      ) {
-
-        const empty =
-          document.createElement("div");
-
+      for (let i = 0; i < firstDay; i++) {
+        const empty = document.createElement("div");
         empty.className = "day empty";
-
         calendar.appendChild(empty);
-
       }
 
-
       // 日付
-      for (
-        let date = 1;
-        date <= lastDate;
-        date++
-      ) {
-
-        const day =
-          document.createElement("div");
-
+      for (let date = 1; date <= lastDate; date++) {
+        const day = document.createElement("div");
         day.className = "day";
 
-
-        const dateKey =
-          formatDate(
-            new Date(year, month, date)
-          );
-
-
-        const isToday =
-          dateKey === formatDate(new Date());
-
+        const dateKey = formatDate(new Date(year, month, date));
+        const isToday = dateKey === formatDate(new Date());
 
         if (isToday) {
           day.classList.add("today");
         }
 
-
-        const dayNumber =
-          document.createElement("div");
-
-        dayNumber.className =
-          "day-number";
-
-        dayNumber.textContent =
-          date;
-
+        const dayNumber = document.createElement("div");
+        dayNumber.className = "day-number";
+        dayNumber.textContent = date;
 
         day.appendChild(dayNumber);
 
-
-        const status =
-          document.createElement("div");
-
+        const status = document.createElement("div");
         status.className = "status";
 
-
+        // 予定がある場合の表示判定
         if (events[dateKey]) {
+          // 既存データ（isRecruitingプロパティがない場合）は互換性のため「募集中」扱いとする
+          const isRecruiting = events[dateKey].isRecruiting !== false;
 
-          status.textContent = "◎";
-
-          status.classList.add(
-            "recruiting"
-          );
-
+          if (isRecruiting) {
+            status.textContent = "◎";
+            status.classList.add("recruiting");
+          } else {
+            status.textContent = "×";
+            status.classList.add("unavailable");
+          }
         } else {
-
           status.textContent = "";
-
-          status.classList.add(
-            "no-event"
-          );
-
+          status.classList.add("no-event");
         }
-
 
         day.appendChild(status);
 
-
         // 予定タイトル
         if (events[dateKey]) {
-
-          const title =
-            document.createElement("div");
-
-          title.className =
-            "event-title";
-
-          title.textContent =
-            events[dateKey].event;
-
+          const title = document.createElement("div");
+          title.className = "event-title";
+          title.textContent = events[dateKey].event;
           day.appendChild(title);
-
         }
 
-
         day.onclick = function () {
-
           openModal(dateKey);
-
         };
 
-
         calendar.appendChild(day);
-
       }
-
     }
 
 
@@ -725,20 +646,10 @@
     ========================= */
 
     function formatDate(date) {
-
-      const year =
-        date.getFullYear();
-
-      const month =
-        String(date.getMonth() + 1)
-          .padStart(2, "0");
-
-      const day =
-        String(date.getDate())
-          .padStart(2, "0");
-
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
       return `${year}-${month}-${day}`;
-
     }
 
 
@@ -747,13 +658,8 @@
     ========================= */
 
     function previousMonth() {
-
-      currentDate.setMonth(
-        currentDate.getMonth() - 1
-      );
-
+      currentDate.setMonth(currentDate.getMonth() - 1);
       renderCalendar();
-
     }
 
 
@@ -762,13 +668,8 @@
     ========================= */
 
     function nextMonth() {
-
-      currentDate.setMonth(
-        currentDate.getMonth() + 1
-      );
-
+      currentDate.setMonth(currentDate.getMonth() + 1);
       renderCalendar();
-
     }
 
 
@@ -777,11 +678,24 @@
     ========================= */
 
     function goToday() {
-
       currentDate = new Date();
-
       renderCalendar();
+    }
 
+
+    /* =========================
+       トグルラベル更新
+    ========================= */
+    document.getElementById("recruitingInput").addEventListener("change", updateRecruitingLabel);
+
+    function updateRecruitingLabel() {
+      const isChecked = document.getElementById("recruitingInput").checked;
+      const label = document.getElementById("recruitingLabel");
+      if (isChecked) {
+        label.textContent = "募集中 (◎)";
+      } else {
+        label.textContent = "自分の予定が空いていない (×)";
+      }
     }
 
 
@@ -790,61 +704,34 @@
     ========================= */
 
     function openModal(dateKey) {
-
       selectedDate = dateKey;
+      document.getElementById("dateInput").value = dateKey;
 
-      document.getElementById(
-        "dateInput"
-      ).value = dateKey;
-
-
-      const event =
-        events[dateKey];
-
+      const event = events[dateKey];
 
       if (event) {
+        document.getElementById("eventInput").value = event.event || "";
+        document.getElementById("placeInput").value = event.place || "";
+        document.getElementById("memoInput").value = event.memo || "";
+        
+        // 既存の予定があれば、保存された募集状態をトグルに反映する
+        document.getElementById("recruitingInput").checked = event.isRecruiting !== false;
 
-        document.getElementById(
-          "eventInput"
-        ).value = event.event || "";
-
-        document.getElementById(
-          "placeInput"
-        ).value = event.place || "";
-
-        document.getElementById(
-          "memoInput"
-        ).value = event.memo || "";
-
-        document.getElementById(
-          "deleteBtn"
-        ).style.display = "block";
-
+        document.getElementById("deleteBtn").style.display = "block";
       } else {
+        document.getElementById("eventInput").value = "";
+        document.getElementById("placeInput").value = "";
+        document.getElementById("memoInput").value = "";
+        
+        // 新規作成時はデフォルトで募集中(ON)にする
+        document.getElementById("recruitingInput").checked = true;
 
-        document.getElementById(
-          "eventInput"
-        ).value = "";
-
-        document.getElementById(
-          "placeInput"
-        ).value = "";
-
-        document.getElementById(
-          "memoInput"
-        ).value = "";
-
-        document.getElementById(
-          "deleteBtn"
-        ).style.display = "none";
-
+        document.getElementById("deleteBtn").style.display = "none";
       }
 
+      updateRecruitingLabel(); // ラベルのテキストを更新
 
-      document.getElementById(
-        "modal"
-      ).classList.add("active");
-
+      document.getElementById("modal").classList.add("active");
     }
 
 
@@ -853,12 +740,8 @@
     ========================= */
 
     function openAddModal() {
-
-      const today =
-        formatDate(new Date());
-
+      const today = formatDate(new Date());
       openModal(today);
-
     }
 
 
@@ -867,11 +750,7 @@
     ========================= */
 
     function closeModal() {
-
-      document.getElementById(
-        "modal"
-      ).classList.remove("active");
-
+      document.getElementById("modal").classList.remove("active");
     }
 
 
@@ -880,57 +759,27 @@
     ========================= */
 
     function saveEvent() {
-
-      const event =
-        document.getElementById(
-          "eventInput"
-        ).value.trim();
-
-
-      const place =
-        document.getElementById(
-          "placeInput"
-        ).value.trim();
-
-
-      const memo =
-        document.getElementById(
-          "memoInput"
-        ).value.trim();
-
+      const event = document.getElementById("eventInput").value.trim();
+      const place = document.getElementById("placeInput").value.trim();
+      const memo = document.getElementById("memoInput").value.trim();
+      const isRecruiting = document.getElementById("recruitingInput").checked; // トグルの状態を取得
 
       if (!event) {
-
-        alert(
-          "予定を入力してください。"
-        );
-
+        alert("予定を入力してください。");
         return;
-
       }
 
-
       events[selectedDate] = {
-
         event: event,
-
         place: place,
-
-        memo: memo
-
+        memo: memo,
+        isRecruiting: isRecruiting // データに保存
       };
 
-
-      localStorage.setItem(
-        "afterSchoolEvents",
-        JSON.stringify(events)
-      );
-
+      localStorage.setItem("afterSchoolEvents", JSON.stringify(events));
 
       closeModal();
-
       renderCalendar();
-
     }
 
 
@@ -939,33 +788,18 @@
     ========================= */
 
     function deleteEvent() {
-
       if (!selectedDate) {
         return;
       }
 
-
-      if (
-        confirm(
-          "この予定を削除しますか？"
-        )
-      ) {
-
+      if (confirm("この予定を削除しますか？")) {
         delete events[selectedDate];
 
-
-        localStorage.setItem(
-          "afterSchoolEvents",
-          JSON.stringify(events)
-        );
-
+        localStorage.setItem("afterSchoolEvents", JSON.stringify(events));
 
         closeModal();
-
         renderCalendar();
-
       }
-
     }
 
 
