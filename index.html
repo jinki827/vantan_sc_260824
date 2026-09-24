@@ -73,16 +73,22 @@
       padding: 0 20px;
     }
 
+    /* カレンダー全体を包むカード型コンテナ */
+    .calendar-wrapper {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+
     /* カレンダーヘッダー */
     .calendar-header {
-      background: white;
       padding: 20px;
-
-      border-radius: 14px 14px 0 0;
-
       display: flex;
       justify-content: space-between;
       align-items: center;
+      border-bottom: 1px solid #e5e7eb;
     }
 
     .month-title {
@@ -104,7 +110,7 @@
       display: grid;
       grid-template-columns: repeat(7, 1fr);
       background: #fafafa;
-      border-left: 1px solid #e5e7eb;
+      border-bottom: 1px solid #e5e7eb;
     }
 
     .weekday {
@@ -114,18 +120,16 @@
       color: #777;
       border-right: 1px solid #e5e7eb;
     }
+    
+    .weekday:last-child {
+      border-right: none;
+    }
 
     /* カレンダー */
     .calendar {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
       background: white;
-
-      border-left: 1px solid #e5e7eb;
-      border-top: 1px solid #e5e7eb;
-
-      border-radius: 0 0 14px 14px;
-      overflow: hidden;
     }
 
     .day {
@@ -141,6 +145,11 @@
       display: flex;
       flex-direction: column;
       gap: 4px;
+    }
+
+    /* 7列目（土曜日）の右端枠線を消してズレを解消 */
+    .day:nth-child(7n) {
+      border-right: none;
     }
 
     .day:hover {
@@ -414,25 +423,27 @@
   </header>
 
   <main class="container">
-    <div class="calendar-header">
-      <div class="month-title" id="monthTitle"></div>
-      <div class="month-buttons">
-        <button onclick="previousMonth()">‹</button>
-        <button onclick="nextMonth()">›</button>
+    <div class="calendar-wrapper">
+      <div class="calendar-header">
+        <div class="month-title" id="monthTitle"></div>
+        <div class="month-buttons">
+          <button onclick="previousMonth()">‹</button>
+          <button onclick="nextMonth()">›</button>
+        </div>
       </div>
-    </div>
 
-    <div class="weekdays">
-      <div class="weekday">日</div>
-      <div class="weekday">月</div>
-      <div class="weekday">火</div>
-      <div class="weekday">水</div>
-      <div class="weekday">木</div>
-      <div class="weekday">金</div>
-      <div class="weekday">土</div>
-    </div>
+      <div class="weekdays">
+        <div class="weekday">日</div>
+        <div class="weekday">月</div>
+        <div class="weekday">火</div>
+        <div class="weekday">水</div>
+        <div class="weekday">木</div>
+        <div class="weekday">金</div>
+        <div class="weekday">土</div>
+      </div>
 
-    <div class="calendar" id="calendar"></div>
+      <div class="calendar" id="calendar"></div>
+    </div>
 
     <div class="legend">
       <span><strong class="mark-my-recruiting">◎</strong> 自分の予定・参加中</span>
@@ -504,7 +515,7 @@
     /* =========================
        データ初期化・管理
     ========================= */
-    const STORAGE_KEY = "afterSchoolEvents_v2"; // データ構造が変わったため別キーに
+    const STORAGE_KEY = "afterSchoolEvents_v3";
     let events = {};
     let currentDate = new Date();
     let selectedDate = null;
@@ -515,42 +526,47 @@
       if (data) {
         events = JSON.parse(data);
       } else {
-        // 初回のみダミーデータを生成
         const today = new Date();
         const y = today.getFullYear();
         const m = today.getMonth();
         const d = today.getDate();
 
-        // 明日と3日後の日付を取得
-        const tomorrow = formatDate(new Date(y, m, d + 1));
-        const dayAfter3 = formatDate(new Date(y, m, d + 3));
+        const getOffsetDate = (offset) => formatDate(new Date(y, m, d + offset));
 
-        events = {
-          [tomorrow]: [
-            {
-              id: generateId(),
-              owner: "田中",
-              event: "駅前でカラオケ",
-              place: "カラオケ館",
-              memo: "みんなで歌おう！途中参加もOK。",
-              isRecruiting: true,
-              members: ["田中"],
-              hasJoined: false
-            }
-          ],
-          [dayAfter3]: [
-            {
-              id: generateId(),
-              owner: "佐藤",
-              event: "テスト勉強",
-              place: "市立図書館",
-              memo: "静かに勉強します。教え合いましょう。",
-              isRecruiting: true,
-              members: ["佐藤"],
-              hasJoined: false
-            }
-          ]
-        };
+        const dummyList = [
+          { offset: 1, owner: "田中", event: "駅前でカラオケ", place: "カラオケ館", memo: "みんなで歌おう！途中参加もOK。", isRecruiting: true },
+          { offset: 2, owner: "田中", event: "ボウリング勝負", place: "ラウンドワン", memo: "2ゲームやります！初心者大歓迎", isRecruiting: true },
+          { offset: 5, owner: "田中", event: "カフェで雑談", place: "コメダ珈琲", memo: "新作スイーツを食べに行きます", isRecruiting: true },
+          { offset: 8, owner: "田中", event: "音ゲー対戦", place: "ゲームセンター", memo: "放課後すぐ集合で！", isRecruiting: true },
+          { offset: 12, owner: "田中", event: "公園でサッカー", place: "代々木公園", memo: "動ける服で来てね", isRecruiting: true },
+
+          { offset: 3, owner: "佐藤", event: "テスト勉強", place: "市立図書館", memo: "静かに勉強します。教え合いましょう。", isRecruiting: true },
+          { offset: 4, owner: "佐藤", event: "映画鑑賞", place: "TOHOシネマズ", memo: "話題のアニメ映画を見に行きます", isRecruiting: true },
+          { offset: 7, owner: "佐藤", event: "服の買い物", place: "ショッピングモール", memo: "春服を探しに行きます", isRecruiting: true },
+          { offset: 10, owner: "佐藤", event: "ファミレスで課題", place: "サイゼリヤ", memo: "ドリンクバーで粘ります", isRecruiting: true },
+          { offset: 14, owner: "佐藤", event: "ボードゲーム会", place: "レンタルスペース", memo: "いろいろ持っていきます", isRecruiting: true }
+        ];
+
+        events = {};
+
+        dummyList.forEach(item => {
+          const dateKey = getOffsetDate(item.offset);
+          if (!events[dateKey]) {
+            events[dateKey] = [];
+          }
+
+          events[dateKey].push({
+            id: generateId(),
+            owner: item.owner,
+            event: item.event,
+            place: item.place,
+            memo: item.memo,
+            isRecruiting: item.isRecruiting,
+            members: [item.owner],
+            hasJoined: false
+          });
+        });
+
         saveData();
       }
     }
@@ -577,14 +593,12 @@
       const firstDay = new Date(year, month, 1).getDay();
       const lastDate = new Date(year, month + 1, 0).getDate();
 
-      // 前月の空白
       for (let i = 0; i < firstDay; i++) {
         const empty = document.createElement("div");
         empty.className = "day empty";
         calendar.appendChild(empty);
       }
 
-      // 日付
       for (let date = 1; date <= lastDate; date++) {
         const day = document.createElement("div");
         day.className = "day";
@@ -593,9 +607,7 @@
         const isToday = dateKey === formatDate(new Date());
         if (isToday) day.classList.add("today");
 
-        // 日付セル全体をクリックしたら「新規追加」とする
         day.onclick = function (e) {
-          // 予定アイテム(event-item)をクリックした場合は反応させない
           if (e.target.closest('.event-item')) return;
           openModal(dateKey, null);
         };
@@ -605,23 +617,19 @@
         dayNumber.textContent = date;
         day.appendChild(dayNumber);
 
-        // 予定の描画
         const dayEvents = events[dateKey] || [];
         dayEvents.forEach(evt => {
           const item = document.createElement("div");
           item.className = "event-item";
 
-          // アイコンの判定
           const mark = document.createElement("span");
           mark.className = "event-mark";
 
           if (evt.isRecruiting) {
             mark.textContent = "◎";
-            // 自分の予定、または自分が参加している予定なら緑
             if (evt.owner === "自分" || evt.hasJoined) {
               mark.classList.add("mark-my-recruiting");
             } else {
-              // 他人の募集予定ならグレー
               mark.classList.add("mark-other-recruiting");
             }
           } else {
@@ -636,9 +644,8 @@
           item.appendChild(mark);
           item.appendChild(textSpan);
 
-          // 予定をクリックした時の処理
           item.onclick = function(e) {
-            e.stopPropagation(); // 親（日付セル）のクリックイベントを止める
+            e.stopPropagation();
             openModal(dateKey, evt.id);
           };
 
@@ -690,7 +697,6 @@
       const dayEvents = events[dateKey] || [];
       const evt = dayEvents.find(e => e.id === eventId);
 
-      // UIの初期化（すべて編集可能・非表示状態にする）
       const els = {
         event: document.getElementById("eventInput"),
         place: document.getElementById("placeInput"),
@@ -716,13 +722,11 @@
       els.title.textContent = "放課後の予定";
 
       if (evt) {
-        // 既存の予定を開く
         els.event.value = evt.event || "";
         els.place.value = evt.place || "";
         els.memo.value = evt.memo || "";
         els.recruiting.checked = evt.isRecruiting;
 
-        // 参加メンバーの描画
         els.membersGroup.style.display = "block";
         const membersList = document.getElementById("membersList");
         membersList.innerHTML = "";
@@ -732,28 +736,24 @@
           membersList.appendChild(li);
         });
 
-        // 自分が作成した予定かどうかで分岐
         if (evt.owner === "自分") {
           els.deleteBtn.style.display = "block";
           els.title.textContent = "自分の予定を編集";
         } else {
-          // 他人の予定（閲覧モード）
           els.title.textContent = `${evt.owner} さんの予定`;
           els.event.readOnly = true;
           els.place.readOnly = true;
           els.memo.readOnly = true;
           els.recruiting.disabled = true;
           els.toggleWrap.classList.add("disabled");
-          els.saveBtn.style.display = "none"; // 保存ボタンは隠す
+          els.saveBtn.style.display = "none";
 
-          // 他人が募集中で、まだ自分が参加していない場合に参加フォームを表示
           if (evt.isRecruiting && !evt.hasJoined) {
             els.joinGroup.style.display = "block";
             document.getElementById("joinNameInput").value = "";
           }
         }
       } else {
-        // 新規作成
         els.title.textContent = "新しい予定を追加";
         els.event.value = "";
         els.place.value = "";
@@ -773,7 +773,6 @@
       document.getElementById("modal").classList.remove("active");
     }
 
-    // モーダル外側のグレー背景クリックで閉じる
     function handleModalOverlayClick(e) {
       if (e.target.id === 'modal') {
         closeModal();
@@ -797,7 +796,6 @@
       if (!events[selectedDate]) events[selectedDate] = [];
 
       if (currentEventId) {
-        // 既存（自分の予定）の更新
         const evt = events[selectedDate].find(e => e.id === currentEventId);
         if (evt && evt.owner === "自分") {
           evt.event = eventVal;
@@ -806,7 +804,6 @@
           evt.isRecruiting = isRecruiting;
         }
       } else {
-        // 新規作成
         events[selectedDate].push({
           id: generateId(),
           owner: "自分",
@@ -815,7 +812,7 @@
           memo: memoVal,
           isRecruiting: isRecruiting,
           members: ["自分"],
-          hasJoined: true // 自分で作った予定なので参加済み扱い
+          hasJoined: true
         });
       }
 
@@ -824,7 +821,6 @@
       renderCalendar();
     }
 
-    // 他人の予定に参加する
     function joinEvent() {
       const name = document.getElementById("joinNameInput").value.trim();
       if (!name) {
@@ -837,12 +833,11 @@
 
       if (evt) {
         evt.members.push(name);
-        evt.hasJoined = true; // 自分が参加したというフラグを立てる
+        evt.hasJoined = true;
         saveData();
         closeModal();
         renderCalendar();
         
-        // 参加完了を少しだけ分かりやすく通知（任意）
         setTimeout(() => alert(`${evt.owner} さんの予定に参加しました！`), 100);
       }
     }
@@ -853,7 +848,6 @@
       if (confirm("この予定を削除しますか？")) {
         events[selectedDate] = events[selectedDate].filter(e => e.id !== currentEventId);
         
-        // その日の予定が空になったらキーごと削除
         if (events[selectedDate].length === 0) {
           delete events[selectedDate];
         }
