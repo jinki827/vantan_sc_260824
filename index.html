@@ -404,12 +404,12 @@
     <div class="legend">
 
       <span>
-        <strong class="has-event">○</strong>
+        <strong class="has-event">❌</strong>
         予定あり
       </span>
 
       <span>
-        <strong class="no-event">❌</strong>
+        <strong class="no-event">○</strong>
         予定なし
       </span>
 
@@ -609,7 +609,7 @@
 
         if (events[dateKey]) {
 
-          status.textContent = "○";
+          status.textContent = "❌";
 
           status.classList.add(
             "has-event"
@@ -617,7 +617,7 @@
 
         } else {
 
-          status.textContent = "❌";
+          status.textContent = "○";
 
           status.classList.add(
             "no-event"
