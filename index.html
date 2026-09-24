@@ -174,12 +174,16 @@
       font-weight: bold;
     }
 
-    .has-event {
-      color: #4f6bed;
+    .recruiting {
+      color: #16a34a;
+    }
+
+    .unavailable {
+      color: #dc2626;
     }
 
     .no-event {
-      color: #d1d5db;
+      color: transparent;
     }
 
     /* 予定概要 */
@@ -276,6 +280,39 @@
       margin-right: auto;
       background: #fee2e2;
       color: #dc2626;
+    }
+
+    .status-btn-group {
+      display: flex;
+      gap: 10px;
+    }
+
+    .status-btn {
+      flex: 1;
+      padding: 10px;
+      font-size: 14px;
+      font-weight: bold;
+      border: 2px solid #e5e7eb;
+      background: #f9fafb;
+      color: #6b7280;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+
+    .status-btn:hover {
+      background: #f3f4f6;
+    }
+
+    .status-btn.active.recruiting-btn {
+      border-color: #16a34a;
+      background: #dcfce7;
+      color: #15803d;
+    }
+
+    .status-btn.active.unavailable-btn {
+      border-color: #dc2626;
+      background: #fee2e2;
+      color: #b91c1c;
     }
 
     /* 説明 */
@@ -404,13 +441,18 @@
     <div class="legend">
 
       <span>
-        <strong class="has-event">❌</strong>
-        予定あり
+        <strong class="no-event">表示なし</strong>
+        自分の予定がない
       </span>
 
       <span>
-        <strong class="no-event">○</strong>
-        予定なし
+        <strong class="recruiting">◎</strong>
+        募集中
+      </span>
+
+      <span>
+        <strong class="unavailable">×</strong>
+        自分の予定が空いていない
       </span>
 
     </div>
@@ -435,6 +477,24 @@
         </label>
 
         <input type="text" id="dateInput" readonly>
+
+      </div>
+
+
+      <div class="form-group">
+
+        <label>
+          募集状況
+        </label>
+
+        <div class="status-btn-group">
+          <button type="button" class="status-btn recruiting-btn active" id="recruitingBtn" onclick="setStatus('recruiting')">
+            ◎ 募集中
+          </button>
+          <button type="button" class="status-btn unavailable-btn" id="unavailableBtn" onclick="setStatus('unavailable')">
+            × 空いていない
+          </button>
+        </div>
 
       </div>
 
@@ -609,15 +669,15 @@
 
         if (events[dateKey]) {
 
-          status.textContent = "❌";
+          status.textContent = "◎";
 
           status.classList.add(
-            "has-event"
+            "recruiting"
           );
 
         } else {
 
-          status.textContent = "○";
+          status.textContent = "";
 
           status.classList.add(
             "no-event"
