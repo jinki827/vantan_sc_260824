@@ -295,11 +295,12 @@
       transition: 0.3s;
     }
 
-    .toggle-switch input[type="checkbox"]:checked + .toggle-slider {
-      background-color: #16a34a; /* 募集中の色 */
+    .toggle-switch input[type="checkbox"]:checked+.toggle-slider {
+      background-color: #16a34a;
+      /* 募集中の色 */
     }
 
-    .toggle-switch input[type="checkbox"]:checked + .toggle-slider::before {
+    .toggle-switch input[type="checkbox"]:checked+.toggle-slider::before {
       transform: translateX(20px);
     }
 
@@ -713,7 +714,7 @@
         document.getElementById("eventInput").value = event.event || "";
         document.getElementById("placeInput").value = event.place || "";
         document.getElementById("memoInput").value = event.memo || "";
-        
+
         // 既存の予定があれば、保存された募集状態をトグルに反映する
         document.getElementById("recruitingInput").checked = event.isRecruiting !== false;
 
@@ -722,7 +723,7 @@
         document.getElementById("eventInput").value = "";
         document.getElementById("placeInput").value = "";
         document.getElementById("memoInput").value = "";
-        
+
         // 新規作成時はデフォルトで募集中(ON)にする
         document.getElementById("recruitingInput").checked = true;
 
